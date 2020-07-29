@@ -16,6 +16,9 @@ spring:
     change-log: classpath:db/changelog.yml
 server:
   max-post-size: 10000
+  servlet:
+    context-path: /verification-api
+
 feign:
   client:
     config:
@@ -32,8 +35,6 @@ springdoc:
   swagger-ui:
     path: /api/swagger
 management:
-  server:
-    port: 8081
   endpoint:
     info:
       enabled: true
@@ -43,6 +44,7 @@ management:
       enabled: true
     prometheus:
       enabled: true
+
   endpoints:
     enabled-by-default: false
     web:
@@ -58,6 +60,7 @@ management:
     export:
       prometheus:
         enabled: true
+
 tan:
   tele:
     ratelimiting:
@@ -80,8 +83,9 @@ fakeDelayMovingAverageSamples: 5
 request:
   sizelimit: 10000
 
+
 cwa-testresult-server:
-  url: http://localhost:8088
+  url: http://localhost:8088/test-results-api
   ssl:
     enabled: false
     one-way: false
