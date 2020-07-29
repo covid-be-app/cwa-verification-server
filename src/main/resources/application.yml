@@ -85,7 +85,7 @@ request:
 
 
 cwa-testresult-server:
-  url: http://localhost:8088
+  url: http://localhost:8088/test-results-api
   ssl:
     enabled: false
     one-way: false

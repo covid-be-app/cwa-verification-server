@@ -42,7 +42,7 @@ public interface TestResultServerClient {
    * @param guid for TestResult
    * @return TestResult from server
    */
-  @PostMapping(value = "/api/v1/app/result",
+  @PostMapping(value = "/v1/app/result",
     consumes = MediaType.APPLICATION_JSON_VALUE,
     produces = MediaType.APPLICATION_JSON_VALUE
   )
