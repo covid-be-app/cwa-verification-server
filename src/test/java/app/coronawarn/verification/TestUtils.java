@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 public class TestUtils {
 
   static final String TEST_GUI_HASH = "f0e4c2f76c58916ec258f246851bea091d14d4247a2fc3e18694461b1816e13b";
+  static final String RESULT_PADDING = "";
   static final String TEST_INVALID_GUI_HASH = "f0e4c2f76c58916ec2b";
   static final String TEST_TELE_TAN = "R3ZNUeV";
   static final String TEST_TELE_TAN_HASH = "eeaa54dc40aa84f587e3bc0cbbf18f7c05891558a5fe1348d52f3277794d8730";
@@ -40,7 +41,7 @@ public class TestUtils {
   static final String TEST_INVALID_TAN = "1ea6ce8a-9740-11ea-is-invalid";
   static final TanSourceOfTrust TEST_SOT = TanSourceOfTrust.CONNECTED_LAB;
   static final String TEST_HASHED_TAN = "cfb5368fc0fca485847acb28e6a96c958bb6ab7350ac766be88ad13841750231";
-  static final String TEST_TAN_TYPE = "TAN";
+  static final TanType TEST_TAN_TYPE = TanType.TAN;
   static final LocalDateTime TAN_VALID_UNTIL_IN_DAYS = LocalDateTime.now().plusDays(7);
   static final String PREFIX_API_VERSION = "/version/v1";
   static final String REGISTRATION_TOKEN_URI = "/registrationToken";
@@ -76,7 +77,7 @@ public class TestUtils {
     cvtan.setRedeemed(false);
     cvtan.setSourceOfTrust(TanSourceOfTrust.TELETAN);
     cvtan.setTanHash(TEST_HASHED_TAN);
-    cvtan.setType(TanType.TELETAN.name());
+    cvtan.setType(TanType.TELETAN);
     cvtan.setValidFrom(LocalDateTime.now());
     cvtan.setValidUntil(LocalDateTime.now().plusHours(1));
     return cvtan;

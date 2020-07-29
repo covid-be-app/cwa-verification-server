@@ -1,6 +1,8 @@
 spring:
   application:
     name: cwa-verification-server
+  profiles:
+    active: internal,external
   datasource:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:verification
@@ -12,6 +14,11 @@ spring:
       ddl-auto: validate
   liquibase:
     change-log: classpath:db/changelog.yml
+server:
+  max-post-size: 10000
+  servlet:
+    context-path: /verification-api
+
 feign:
   client:
     config:
@@ -24,9 +31,9 @@ jwt:
   enabled: false
 springdoc:
   api-docs:
-    path: /api-docs/docs
+    path: /api/docs
   swagger-ui:
-    path: /api-docs/swagger
+    path: /api/swagger
 management:
   endpoint:
     info:
@@ -56,6 +63,10 @@ management:
 
 tan:
   tele:
+    ratelimiting:
+      count: 1000
+      seconds: 3600
+      threshold-in-percent: 80
     valid:
       length: 9
       hours: 1
@@ -67,6 +78,10 @@ entities:
   cleanup:
     days: 21
     rate: 3600000
+initialFakeDelayMilliseconds: 10
+fakeDelayMovingAverageSamples: 5
+request:
+  sizelimit: 10000
 
 
 cwa-testresult-server:
@@ -80,6 +95,3 @@ cwa-testresult-server:
     key-store-password: changeit
     trust-store: classpath:truststore.jks
     trust-store-password: changeit
-server:
-  servlet:
-    context-path: /api

@@ -29,20 +29,21 @@ import app.coronawarn.verification.model.RegistrationToken;
 import app.coronawarn.verification.model.RegistrationTokenKeyType;
 import app.coronawarn.verification.model.RegistrationTokenRequest;
 import app.coronawarn.verification.repository.VerificationAppSessionRepository;
-import app.coronawarn.verification.service.JwtService;
 import app.coronawarn.verification.service.TanService;
 import app.coronawarn.verification.service.TestResultServerService;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import static org.junit.Assert.*;
+import org.junit.After;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.runner.RunWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doReturn;
-import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -52,8 +53,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -67,6 +69,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("external")
 public class VerificationApplicationExternalTest {
 
+  private static final String TOKEN_PADDING = "1";
   @Autowired
   private MockMvc mockMvc;
   @MockBean
@@ -79,9 +82,38 @@ public class VerificationApplicationExternalTest {
   @Autowired
   private VerificationApplicationConfig verificationApplicationConfig;
 
-  @BeforeEach
-  void setUp() {
-    MockitoAnnotations.initMocks(this);
+  private static long cachedRequestSize;
+
+  @Before
+  public void setUp() {
+    // Store max request size config property to allow tests to modify it
+    cachedRequestSize = verificationApplicationConfig.getRequest().getSizelimit();
+  }
+
+  @After
+  public void tearDown() {
+    // Reset max request size to cached value
+    verificationApplicationConfig.getRequest().setSizelimit(cachedRequestSize);
+  }
+
+  /**
+   * Test generateTAN.
+   *
+   * @throws Exception if the test cannot be performed.
+   */
+  @Test
+  public void callGenerateTanWithFake() throws Exception {
+    log.info("process callGenerateTan()");
+
+    TestUtils.prepareAppSessionTestData(appSessionrepository);
+    doReturn(TestUtils.TEST_LAB_POSITIVE_RESULT).when(testResultServerService).result(any());
+
+    MvcResult result = mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan")
+      .header("cwa-fake", "1")
+      .contentType(MediaType.APPLICATION_JSON)
+      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK, TOKEN_PADDING)))).andReturn();
+    mockMvc.perform(asyncDispatch(result))
+      .andExpect(status().isCreated());
   }
 
   /**
@@ -96,9 +128,13 @@ public class VerificationApplicationExternalTest {
     TestUtils.prepareAppSessionTestData(appSessionrepository);
     doReturn(TestUtils.TEST_LAB_POSITIVE_RESULT).when(testResultServerService).result(any());
 
-    mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan")
+    MvcResult result = mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan")
+      .header("cwa-fake", "0")
       .contentType(MediaType.APPLICATION_JSON)
-      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK))))
+      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK, TOKEN_PADDING))))
+      .andReturn();
+
+    mockMvc.perform(asyncDispatch(result))
       .andExpect(status().isCreated());
 
     long count = appSessionrepository.count();
@@ -121,9 +157,10 @@ public class VerificationApplicationExternalTest {
   @Test
   public void callGenerateTanByUnknownToken() throws Exception {
     log.info("process callGenerateTanByUnknownToken()");
-
+    appSessionrepository.deleteAll();
     mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan")
       .contentType(MediaType.APPLICATION_JSON)
+      .header("cwa-fake", "0")
       .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK))))
       .andExpect(status().isBadRequest());
   }
@@ -138,8 +175,42 @@ public class VerificationApplicationExternalTest {
     log.info("process callGenerateTanByInvalidToken()");
 
     mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan")
+      .header("cwa-fake" ,"0" )
       .contentType(MediaType.APPLICATION_JSON)
-      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_INVALID_REG_TOK))))
+      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_INVALID_REG_TOK,TOKEN_PADDING))))
+      .andExpect(status().isBadRequest());
+  }
+
+  /**
+   * Test generateTAN with an fake test result from the lab-server.
+   *
+   * @throws Exception if the test cannot be performed.
+   */
+  @Test
+  public void callGenerateTanWithNegativeCovidResultFaked() throws Exception {
+    log.info("process callGenerateTanWithNegativeCovidResult()");
+    TestUtils.prepareAppSessionTestData(appSessionrepository);
+    doReturn(TestUtils.TEST_LAB_NEGATIVE_RESULT).when(testResultServerService).result(any());
+
+    mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan")
+      .header("cwa-fake" ,"1" )
+      .contentType(MediaType.APPLICATION_JSON)
+      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK,TOKEN_PADDING))))
+      .andExpect(status().isOk());
+  }
+  /**
+   * Test generateTAN with an negative test result from the lab-server.
+   *
+   * @throws Exception if the test cannot be performed.
+   */
+  @Test
+  public void callGenerateTanWithNegativeCovidResultWithoutFakeHeader() throws Exception {
+    log.info("process callGenerateTanWithNegativeCovidResult()");
+    TestUtils.prepareAppSessionTestData(appSessionrepository);
+    doReturn(TestUtils.TEST_LAB_NEGATIVE_RESULT).when(testResultServerService).result(any());
+    mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan")
+      .contentType(MediaType.APPLICATION_JSON)
+      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK,TOKEN_PADDING))))
       .andExpect(status().isBadRequest());
   }
 
@@ -156,7 +227,7 @@ public class VerificationApplicationExternalTest {
 
     mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan")
       .contentType(MediaType.APPLICATION_JSON)
-      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK))))
+      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK,TOKEN_PADDING))))
       .andExpect(status().isBadRequest());
   }
 
@@ -175,8 +246,9 @@ public class VerificationApplicationExternalTest {
     appSessionrepository.save(appSessionTestData);
 
     mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan")
+      .header("cwa-fake", "0")
       .contentType(MediaType.APPLICATION_JSON)
-      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK))))
+      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK,TOKEN_PADDING))))
       .andExpect(status().isBadRequest());
   }
 
@@ -194,9 +266,12 @@ public class VerificationApplicationExternalTest {
     appSessionrepository.save(appSessionTestData);
     doReturn(TestUtils.TEST_LAB_NEGATIVE_RESULT).when(testResultServerService).result(any());
 
-    mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan")
+    MvcResult result = mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan")
+      .header("cwa-fake", "0")
       .contentType(MediaType.APPLICATION_JSON)
-      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK))))
+      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK, TOKEN_PADDING))))
+      .andReturn();
+    mockMvc.perform(asyncDispatch(result))
       .andExpect(status().isCreated());
   }
 
@@ -215,8 +290,9 @@ public class VerificationApplicationExternalTest {
     doReturn(TestUtils.TEST_LAB_NEGATIVE_RESULT).when(testResultServerService).result(any());
 
     mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan")
+      .header("cwa-fake", "0")
       .contentType(MediaType.APPLICATION_JSON)
-      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK))))
+      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK,TOKEN_PADDING))))
       .andExpect(status().isBadRequest());
   }
 
@@ -230,12 +306,13 @@ public class VerificationApplicationExternalTest {
     log.info("process callGetRegistrationTokenByGuid() ");
     appSessionrepository.deleteAll();
     RegistrationTokenRequest request = new RegistrationTokenRequest(TestUtils.TEST_GUI_HASH, RegistrationTokenKeyType.GUID);
-    mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.REGISTRATION_TOKEN_URI)
+    MvcResult result = mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.REGISTRATION_TOKEN_URI)
       .contentType(MediaType.APPLICATION_JSON)
+      .header("cwa-fake", "0")
       .content(TestUtils.getAsJsonFormat(request)))
-      .andExpect(status().isCreated())
-      .andExpect(jsonPath("$.registrationToken").exists());
-
+      .andReturn();
+    mockMvc.perform(asyncDispatch(result))
+      .andExpect(status().isCreated());
     long count = appSessionrepository.count();
     log.info("Got {} verification entries from db repository.", count);
     assertEquals("Verification Failed: Amount of verification entries is not 1 (Result=" + count + "). ", 1, count);
@@ -245,6 +322,26 @@ public class VerificationApplicationExternalTest {
     assertEquals(TestUtils.TEST_GUI_HASH, verificationList.get(0).getHashedGuid());
     assertEquals(AppSessionSourceOfTrust.HASHED_GUID, verificationList.get(0).getSourceOfTrust());
     assertNotNull(verificationList.get(0).getRegistrationTokenHash());
+  }
+
+  /**
+   * Test get registration token by a guid with fake.
+   *
+   * @throws Exception if the test cannot be performed.
+   */
+  @Test
+  public void callGetRegistrationTokenByGuidWithFake() throws Exception {
+    log.info("process callGetRegistrationTokenByGuid() ");
+    appSessionrepository.deleteAll();
+    RegistrationTokenRequest request = new RegistrationTokenRequest(TestUtils.TEST_GUI_HASH, RegistrationTokenKeyType.GUID);
+    MvcResult result = mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.REGISTRATION_TOKEN_URI)
+      .contentType(MediaType.APPLICATION_JSON)
+      .header("cwa-fake", "1")
+      .content(TestUtils.getAsJsonFormat(request)))
+      .andReturn();
+    mockMvc.perform(asyncDispatch(result))
+      .andExpect(status().isCreated());
+
   }
 
   /**
@@ -258,6 +355,7 @@ public class VerificationApplicationExternalTest {
     appSessionrepository.deleteAll();
     RegistrationTokenRequest request = new RegistrationTokenRequest(TestUtils.TEST_GUI_HASH, null);
     mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.REGISTRATION_TOKEN_URI)
+      .header("cwa-fake", "0")
       .contentType(MediaType.APPLICATION_JSON)
       .content(TestUtils.getAsJsonFormat(request)))
       .andExpect(status().isBadRequest());
@@ -274,6 +372,7 @@ public class VerificationApplicationExternalTest {
     appSessionrepository.deleteAll();
     RegistrationTokenRequest request = new RegistrationTokenRequest(null, RegistrationTokenKeyType.GUID);
     mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.REGISTRATION_TOKEN_URI)
+      .header("cwa-fake", "0")
       .contentType(MediaType.APPLICATION_JSON)
       .content(TestUtils.getAsJsonFormat(request)))
       .andExpect(status().isBadRequest());
@@ -293,11 +392,12 @@ public class VerificationApplicationExternalTest {
     given(this.tanService.isTeleTanValid(TestUtils.TEST_TELE_TAN)).willReturn(true);
     given(this.tanService.getEntityByTan(TestUtils.TEST_TELE_TAN)).willReturn(Optional.of(TestUtils.getTeleTanTestData()));
 
-    mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.REGISTRATION_TOKEN_URI)
+    MvcResult result = mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.REGISTRATION_TOKEN_URI)
       .contentType(MediaType.APPLICATION_JSON)
       .content(TestUtils.getAsJsonFormat(request)))
-      .andExpect(status().isCreated())
-      .andExpect(jsonPath("$.registrationToken").exists());
+      .andReturn();
+    mockMvc.perform(asyncDispatch(result))
+      .andExpect(status().isCreated());
 
     long count = appSessionrepository.count();
     log.info("Got {} verification entries from db repository.", count);
@@ -324,6 +424,7 @@ public class VerificationApplicationExternalTest {
     given(this.tanService.getEntityByTan(TestUtils.TEST_TELE_TAN)).willReturn(Optional.empty());
 
     mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.REGISTRATION_TOKEN_URI)
+      .header("cwa-fake", "0")
       .contentType(MediaType.APPLICATION_JSON)
       .content(TestUtils.getAsJsonFormat(request)))
       .andExpect(status().isBadRequest());
@@ -341,6 +442,7 @@ public class VerificationApplicationExternalTest {
     RegistrationTokenRequest request = new RegistrationTokenRequest(TestUtils.TEST_INVALID_GUI_HASH, RegistrationTokenKeyType.GUID);
 
     mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.REGISTRATION_TOKEN_URI)
+      .header("cwa-fake", "0")
       .contentType(MediaType.APPLICATION_JSON)
       .content(TestUtils.getAsJsonFormat(request)))
       .andExpect(status().isBadRequest());
@@ -357,9 +459,13 @@ public class VerificationApplicationExternalTest {
     TestUtils.prepareAppSessionTestData(appSessionrepository);
     RegistrationTokenRequest request = new RegistrationTokenRequest(TestUtils.TEST_GUI_HASH, RegistrationTokenKeyType.GUID);
 
-    mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.REGISTRATION_TOKEN_URI)
+    MvcResult result = mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.REGISTRATION_TOKEN_URI)
+      .header("cwa-fake", "0")
       .contentType(MediaType.APPLICATION_JSON)
       .content(TestUtils.getAsJsonFormat(request)))
+      .andReturn();
+    ;
+    mockMvc.perform(asyncDispatch(result))
       .andExpect(status().isBadRequest());
   }
 
@@ -382,6 +488,7 @@ public class VerificationApplicationExternalTest {
     RegistrationTokenRequest request = new RegistrationTokenRequest(TestUtils.TEST_TELE_TAN, RegistrationTokenKeyType.TELETAN);
 
     mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.REGISTRATION_TOKEN_URI)
+      .header("cwa-fake", "0")
       .contentType(MediaType.APPLICATION_JSON)
       .content(TestUtils.getAsJsonFormat(request)))
       .andExpect(status().isBadRequest());
@@ -401,9 +508,27 @@ public class VerificationApplicationExternalTest {
     given(this.testResultServerService.result(new HashedGuid(TestUtils.TEST_GUI_HASH))).willReturn(TestUtils.TEST_LAB_POSITIVE_RESULT);
 
     mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/testresult").contentType(MediaType.APPLICATION_JSON)
-      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK))))
-      .andExpect(status().isOk())
-      .andExpect(jsonPath("$.testResult").value(TestUtils.TEST_LAB_POSITIVE_RESULT.getTestResult()));
+      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK,TOKEN_PADDING))))
+      .andExpect(status().isOk());
+  }
+
+  /**
+   * Test getTestState fake.
+   *
+   * @throws Exception if the test cannot be performed.
+   */
+  @Test
+  public void callGetTestStateWithFake() throws Exception {
+    log.info("process callGetTestState()");
+
+    TestUtils.prepareAppSessionTestData(appSessionrepository);
+
+    given(this.testResultServerService.result(new HashedGuid(TestUtils.TEST_GUI_HASH))).willReturn(TestUtils.TEST_LAB_POSITIVE_RESULT);
+
+    mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/testresult").contentType(MediaType.APPLICATION_JSON)
+      .header("cwa-fake", "1")
+      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK,TOKEN_PADDING))))
+      .andExpect(status().isOk());
   }
 
   /**
@@ -419,8 +544,9 @@ public class VerificationApplicationExternalTest {
     appSessionrepository.deleteAll();
 
     mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/testresult")
+      .header("cwa-fake", "0")
       .contentType(MediaType.APPLICATION_JSON)
-      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK))))
+      .content(TestUtils.getAsJsonFormat(new RegistrationToken(TestUtils.TEST_REG_TOK,TOKEN_PADDING))))
       .andExpect(status().isBadRequest());
   }
 
@@ -431,7 +557,8 @@ public class VerificationApplicationExternalTest {
    */
   @Test
   public void testVerifyEndpointShouldNotBeReachable() throws Exception {
-    mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.TAN_VERIFICATION_URI))
+    mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.TAN_VERIFICATION_URI)
+      .header("cwa-fake", "0"))
       .andExpect(status().isNotFound());
   }
 
@@ -442,8 +569,27 @@ public class VerificationApplicationExternalTest {
    */
   @Test
   public void testTeleTanEndpointShouldNotBeReachable() throws Exception {
-    mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan/teletan"))
+    mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + "/tan/teletan").header("cwa-fake", "0")
+    )
       .andExpect(status().isNotFound());
+  }
+
+  /**
+   * Test get registration token by a guid with a size larger than the maxSizeLimit.
+   *
+   * @throws Exception if the test cannot be performed.
+   */
+  @Test
+  public void callGetRegistrationTokenByLargeRequest() throws Exception {
+    log.info("process callGetRegistrationTokenByLargeRequest() ");
+    appSessionrepository.deleteAll();
+    RegistrationTokenRequest request = new RegistrationTokenRequest(TestUtils.TEST_GUI_HASH, RegistrationTokenKeyType.GUID);
+    //Set the maxSizeLimit to 10 for testing
+    verificationApplicationConfig.getRequest().setSizelimit(10);
+    mockMvc.perform(post(TestUtils.PREFIX_API_VERSION + TestUtils.REGISTRATION_TOKEN_URI)
+      .contentType(MediaType.APPLICATION_JSON)
+      .content(TestUtils.getAsJsonFormat(request)))
+      .andExpect(status().isNotAcceptable());
   }
 
 }
