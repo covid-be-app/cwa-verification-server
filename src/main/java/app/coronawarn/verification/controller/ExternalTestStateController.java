@@ -69,6 +69,8 @@ public class ExternalTestStateController {
     produces = MediaType.APPLICATION_JSON_VALUE
   )
 
+  // TODO: coronalert-app - here we are polling for a test state based on the registration token.
+  // TODO: coronalert-app - ah okInstead of registration token we will use an R1 + t0
   public ResponseEntity<TestResult> getTestState(@Valid @RequestBody RegistrationToken registrationToken) {
     Optional<VerificationAppSession> appSession =
       appSessionService.getAppSessionByToken(registrationToken.getRegistrationToken());
@@ -77,11 +79,14 @@ public class ExternalTestStateController {
       switch (sourceOfTrust) {
         case HASHED_GUID:
           String hash = appSession.get().getHashedGuid();
+
+          //// TODO: coronalert-app - here we need to retrieve the testresult based on R1 + t0
           TestResult testResult = testResultServerService.result(new HashedGuid(hash));
           log.info("The result for registration token based on hashed Guid will be returned.");
           return ResponseEntity.ok(testResult);
         case TELETAN:
           log.info("The result for registration token based on teleTAN will be returned.");
+          // TODO: coronalert-app - why is this always true here ?
           return ResponseEntity.ok(new TestResult(LabTestResult.POSITIVE.getTestResult()));
         default:
           throw new VerificationServerException(HttpStatus.BAD_REQUEST,

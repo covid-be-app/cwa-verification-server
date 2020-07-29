@@ -24,12 +24,10 @@ jwt:
   enabled: false
 springdoc:
   api-docs:
-    path: /api/docs
+    path: /api-docs/docs
   swagger-ui:
-    path: /api/swagger
+    path: /api-docs/swagger
 management:
-  server:
-    port: 8081
   endpoint:
     info:
       enabled: true
@@ -39,6 +37,7 @@ management:
       enabled: true
     prometheus:
       enabled: true
+
   endpoints:
     enabled-by-default: false
     web:
@@ -54,6 +53,7 @@ management:
     export:
       prometheus:
         enabled: true
+
 tan:
   tele:
     valid:
@@ -68,6 +68,7 @@ entities:
     days: 21
     rate: 3600000
 
+
 cwa-testresult-server:
   url: http://localhost:8088
   ssl:
@@ -79,3 +80,6 @@ cwa-testresult-server:
     key-store-password: changeit
     trust-store: classpath:truststore.jks
     trust-store-password: changeit
+server:
+  servlet:
+    context-path: /api
