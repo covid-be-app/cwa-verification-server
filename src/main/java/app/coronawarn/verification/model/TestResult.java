@@ -75,7 +75,7 @@ public class TestResult {
   private String responsePadding;
 
   public enum ResultChannel {
-    UNKOWN,LAB,DOCTOR
+    UNKNOWN,LAB,DOCTOR
   }
 
 }
