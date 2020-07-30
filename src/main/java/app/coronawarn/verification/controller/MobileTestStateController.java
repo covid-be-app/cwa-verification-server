@@ -1,8 +1,8 @@
 package app.coronawarn.verification.controller;
 
 
-import app.coronawarn.verification.model.HashedGuid;
 import app.coronawarn.verification.model.MobileTestPollingRequest;
+import app.coronawarn.verification.model.MobileTestResultRequest;
 import app.coronawarn.verification.model.TestResult;
 import app.coronawarn.verification.service.TestResultServerService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -66,9 +66,12 @@ x   * @return result of the test, which can be POSITIVE, NEGATIVE, INVALID, PEND
     @Valid @RequestBody MobileTestPollingRequest mobileTestPollingRequest) {
 
     //TODO: no hashGuid needed ... plain string should also be accepted.
-    TestResult testResult = testResultServerService.result(
-      new HashedGuid(mobileTestPollingRequest.getTestResultPollingToken()));
+    TestResult testResult = testResultServerService.mobileTestResultRequest(
+      MobileTestResultRequest.fromMobileTestPollingRequest(mobileTestPollingRequest));
+
     testResult.setResponsePadding(RandomStringUtils.randomAlphanumeric(RESPONSE_PADDING_LENGTH));
+
+
     log.debug("Result {}",testResult);
     log.info("The result for registration token based on hashed Guid will be returned.");
 

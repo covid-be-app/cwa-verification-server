@@ -22,6 +22,7 @@
 package app.coronawarn.verification.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDate;
 import javax.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -44,9 +45,37 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TestResult {
   @NonNull
-  private int testResult;
+  private LabTestResult result;
+
+  @NonNull
+  private ResultChannel resultChannel;
+
+  /**
+   * Create a test result with a result,channel and padding.
+   *
+   * @param result the result.
+   * @param resultChannel the channel.
+   * @param responsePadding the padding.
+   */
+  public TestResult(LabTestResult result,ResultChannel resultChannel,String responsePadding) {
+    this.result = result;
+    this.resultChannel = resultChannel;
+    this.responsePadding = responsePadding;
+  }
+
+  private LocalDate datePatientInfectious;
+
+  private LocalDate dateSampleCollected;
+
+  private LocalDate dateTestPerformed;
+
+  private LocalDate dateTestCommunicated;
 
   @Transient
   private String responsePadding;
+
+  public enum ResultChannel {
+    UNKOWN,LAB,DOCTOR
+  }
 
 }

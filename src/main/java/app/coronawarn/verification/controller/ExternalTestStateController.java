@@ -116,7 +116,7 @@ public class ExternalTestStateController {
           stopWatch.stop();
           fakeDelayService.updateFakeTestRequestDelay(stopWatch.getTotalTimeMillis());
           deferredResult.setResult(ResponseEntity.ok(
-            new TestResult(LabTestResult.POSITIVE.getTestResult(),
+            new TestResult(LabTestResult.POSITIVE, TestResult.ResultChannel.LAB,
               RandomStringUtils.randomAlphanumeric(RESPONSE_PADDING_LENGTH))));
           return deferredResult;
         default:
