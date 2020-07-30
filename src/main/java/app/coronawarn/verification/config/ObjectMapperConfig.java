@@ -1,5 +1,6 @@
 package app.coronawarn.verification.config;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.context.annotation.Bean;
@@ -21,6 +22,7 @@ public class ObjectMapperConfig {
       public void configure(ObjectMapper objectMapper) {
         super.configure(objectMapper);
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        objectMapper.setSerializationInclusion(NON_NULL);
         objectMapper.enable(SerializationFeature.WRITE_ENUMS_USING_INDEX);
       }
     };
