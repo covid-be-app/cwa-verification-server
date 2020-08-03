@@ -4,6 +4,7 @@ import app.coronawarn.verification.domain.VerificationAppSession;
 import app.coronawarn.verification.domain.VerificationTan;
 import app.coronawarn.verification.model.AppSessionSourceOfTrust;
 import app.coronawarn.verification.model.AuthorizationRole;
+import app.coronawarn.verification.model.LabTestResult;
 import app.coronawarn.verification.model.TanSourceOfTrust;
 import app.coronawarn.verification.model.TanType;
 import app.coronawarn.verification.model.TestResult;
@@ -35,8 +36,8 @@ public class TestUtils {
   static final String TEST_INVALID_REG_TOK = "1234567890";
   static final String TEST_REG_TOK = "1ea6ce8a-9740-41ea-bb37-0242ac130002";
   static final String TEST_REG_TOK_HASH = "0199effab87800689c15c08e234db54f088cc365132ffc230e882b82cd3ecf95";
-  static final TestResult TEST_LAB_POSITIVE_RESULT = new TestResult(2);
-  static final TestResult TEST_LAB_NEGATIVE_RESULT = new TestResult(1);
+  static final TestResult TEST_LAB_POSITIVE_RESULT = new TestResult(LabTestResult.POSITIVE, TestResult.ResultChannel.LAB);
+  static final TestResult TEST_LAB_NEGATIVE_RESULT = new TestResult(LabTestResult.NEGATIVE, TestResult.ResultChannel.LAB);
   static final String TEST_TAN = "1819d933-45f6-4e3c-80c7-eeffd2d44ee6";
   static final String TEST_INVALID_TAN = "1ea6ce8a-9740-11ea-is-invalid";
   static final TanSourceOfTrust TEST_SOT = TanSourceOfTrust.CONNECTED_LAB;

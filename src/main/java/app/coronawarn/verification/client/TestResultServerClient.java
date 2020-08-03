@@ -22,6 +22,7 @@
 package app.coronawarn.verification.client;
 
 import app.coronawarn.verification.model.HashedGuid;
+import app.coronawarn.verification.model.MobileTestResultRequest;
 import app.coronawarn.verification.model.TestResult;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
@@ -35,6 +36,18 @@ import org.springframework.web.bind.annotation.PostMapping;
   url = "${cwa-testresult-server.url}",
   configuration = TestResultServerClientConfig.class)
 public interface TestResultServerClient {
+
+  /**
+   * This method gets a testResult from the LabServer.
+   *
+   * @param mobileTestResultRequest for TestResult
+   * @return TestResult from server
+   */
+  @PostMapping(value = "/v1/app/mobiletestresult",
+    consumes = MediaType.APPLICATION_JSON_VALUE,
+    produces = MediaType.APPLICATION_JSON_VALUE
+  )
+  TestResult mobileTestResultRequest(MobileTestResultRequest mobileTestResultRequest);
 
   /**
    * This method gets a testResult from the LabServer.

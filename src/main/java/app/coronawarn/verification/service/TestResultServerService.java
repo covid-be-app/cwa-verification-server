@@ -23,6 +23,7 @@ package app.coronawarn.verification.service;
 
 import app.coronawarn.verification.client.TestResultServerClient;
 import app.coronawarn.verification.model.HashedGuid;
+import app.coronawarn.verification.model.MobileTestResultRequest;
 import app.coronawarn.verification.model.TestResult;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,17 @@ public class TestResultServerService {
 
   @NonNull
   private final TestResultServerClient testResultServerClient;
+
+  /**
+   * //TODO: instead of a hash we not require a MobileTestResultRequest.
+   *
+   *
+   * @param mobileTestResultRequest hashed GUID
+   * @return Testresult for GUID
+   */
+  public TestResult mobileTestResultRequest(MobileTestResultRequest mobileTestResultRequest) {
+    return testResultServerClient.mobileTestResultRequest(mobileTestResultRequest);
+  }
 
   /**
    * This method gives an TestResult for a guid.
