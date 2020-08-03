@@ -53,3 +53,4 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         SERVICE_NAMES: ${{ secrets.SERVICE_NAMES }}
         CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
+
