@@ -1,5 +1,6 @@
 package app.coronawarn.verification.controller;
 
+
 import app.coronawarn.verification.domain.VerificationAppSession;
 import app.coronawarn.verification.exception.VerificationServerException;
 import app.coronawarn.verification.model.AppSessionSourceOfTrust;
@@ -81,6 +82,9 @@ public class ExternalTestStateController {
     consumes = MediaType.APPLICATION_JSON_VALUE,
     produces = MediaType.APPLICATION_JSON_VALUE
   )
+
+  // TODO: coronalert-app - here we are polling for a test state based on the registration token.
+  // TODO: coronalert-app - Instead of registration token we will use an R1 + t0
   public DeferredResult<ResponseEntity<TestResult>> getTestState(
     @Valid @RequestBody RegistrationToken registrationToken,
     @RequestHeader(value = "cwa-fake", required = false) String fake) {
@@ -98,6 +102,7 @@ public class ExternalTestStateController {
       switch (sourceOfTrust) {
         case HASHED_GUID:
           String hash = appSession.get().getHashedGuid();
+          //// TODO: coronalert-app - here we need to retrieve the testresult based on R1 + t0
           TestResult testResult = testResultServerService.result(new HashedGuid(hash));
           testResult.setResponsePadding(RandomStringUtils.randomAlphanumeric(RESPONSE_PADDING_LENGTH));
           log.debug("Result {}",testResult);

@@ -26,7 +26,7 @@ public class VerificationApplicationExternalTestHttp {
     Socket socket = new Socket(InetAddress.getLocalHost(), port);
     PrintWriter writer = new PrintWriter(socket.getOutputStream());
 
-    writer.print("POST /version/v1/registrationToken HTTP/1.1\r\n");
+    writer.print("POST /verification-api/version/v1/registrationToken HTTP/1.1\r\n");
     writer.print("Host: 127.0.0.1:" + port + "\r\n");
     writer.print("Content-Type: application/json\r\n");
     writer.print("Transfer-Encoding: Chunked\r\n\r\n");
