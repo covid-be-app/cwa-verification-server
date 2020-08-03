@@ -1,4 +1,4 @@
-name: ci-master
+name: ci-develop
 on:
   push:
     branches:
