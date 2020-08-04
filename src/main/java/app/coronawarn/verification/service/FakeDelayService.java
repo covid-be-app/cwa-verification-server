@@ -22,20 +22,22 @@
 package app.coronawarn.verification.service;
 
 import app.coronawarn.verification.config.VerificationApplicationConfig;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.springframework.stereotype.Component;
 
 /**
  * {@link  FakeDelayService} instances manage the response delay in the processing of fake (or "dummy") requests.
  */
+@Slf4j
 @Component
 public class FakeDelayService {
 
   private final long movingAverageSampleSize;
+
   private long fakeDelayTest;
-
+  private long fakeDelayAck;
   private long fakeDelayTan;
-
   private long fakeDelayToken;
 
   /**
@@ -43,6 +45,7 @@ public class FakeDelayService {
    */
   public FakeDelayService(VerificationApplicationConfig applicationConfig) {
     this.fakeDelayTest = applicationConfig.getInitialFakeDelayMilliseconds();
+    this.fakeDelayAck = applicationConfig.getInitialFakeDelayMilliseconds();
     this.fakeDelayTan = applicationConfig.getInitialFakeDelayMilliseconds();
     this.fakeDelayToken = applicationConfig.getInitialFakeDelayMilliseconds();
     this.movingAverageSampleSize = applicationConfig.getFakeDelayMovingAverageSamples();
@@ -59,6 +62,13 @@ public class FakeDelayService {
    * Returns the current fake delay after applying random jitter.
    */
   public long getJitteredFakeTestDelay() {
+    return new PoissonDistribution(fakeDelayTest).sample();
+  }
+
+  /**
+   * Returns the current fake delay after applying random jitter.
+   */
+  public long getJitteredFakeAckDelay() {
     return new PoissonDistribution(fakeDelayTest).sample();
   }
 
@@ -82,7 +92,15 @@ public class FakeDelayService {
    */
   public void updateFakeTestRequestDelay(long realRequestDuration) {
     final long currentDelay = fakeDelayTest;
-    fakeDelayTan = currentDelay + (realRequestDuration - currentDelay) / movingAverageSampleSize;
+    fakeDelayTest = currentDelay + (realRequestDuration - currentDelay) / movingAverageSampleSize;
+  }
+
+  /**
+   * Updates the moving average for the request duration for the Tan Endpoint with the specified value.
+   */
+  public void updateFakeAckRequestDelay(long realRequestDuration) {
+    final long currentDelay = fakeDelayAck;
+    fakeDelayAck = currentDelay + (realRequestDuration - currentDelay) / movingAverageSampleSize;
   }
 
   /**
@@ -90,7 +108,7 @@ public class FakeDelayService {
    */
   public void updateFakeTokenRequestDelay(long realRequestDuration) {
     final long currentDelay = fakeDelayToken;
-    fakeDelayTan = currentDelay + (realRequestDuration - currentDelay) / movingAverageSampleSize;
+    fakeDelayToken = currentDelay + (realRequestDuration - currentDelay) / movingAverageSampleSize;
   }
 
   /**
@@ -105,6 +123,13 @@ public class FakeDelayService {
    */
   public Double getFakeTestDelayInSeconds() {
     return fakeDelayTest / 1000.;
+  }
+
+  /**
+   * Returns the current fake delay in seconds. Used for monitoring.
+   */
+  public Double getFakeAckDelayInSeconds() {
+    return fakeDelayAck / 1000.;
   }
 
   /**

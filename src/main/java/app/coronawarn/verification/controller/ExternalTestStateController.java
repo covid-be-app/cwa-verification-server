@@ -89,7 +89,7 @@ public class ExternalTestStateController {
     @Valid @RequestBody RegistrationToken registrationToken,
     @RequestHeader(value = "cwa-fake", required = false) String fake) {
     if ((fake != null) && (fake.equals("1"))) {
-      return fakeRequestController.getTestState(registrationToken);
+      return fakeRequestController.getTestState();
     }
     StopWatch stopWatch = new StopWatch();
     stopWatch.start();

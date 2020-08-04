@@ -42,6 +42,8 @@ import lombok.experimental.Accessors;
 @AllArgsConstructor
 public class MobileTestResultRequest {
 
+  public static final String FAKE_TEST_ID = "000000000000000";
+
   @NotNull
   @Pattern(regexp = "^[0-9]{15}")
   private String mobileTestId;
@@ -64,6 +66,11 @@ public class MobileTestResultRequest {
       LocalDate.parse(token.split("\\|")[1])
     );
 
+  }
+
+
+  public boolean isFakeRequest() {
+    return FAKE_TEST_ID.equals(getMobileTestId());
   }
 
 }

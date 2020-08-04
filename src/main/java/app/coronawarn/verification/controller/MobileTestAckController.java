@@ -3,6 +3,8 @@ package app.coronawarn.verification.controller;
 
 import app.coronawarn.verification.model.MobileTestPollingRequest;
 import app.coronawarn.verification.model.MobileTestResultRequest;
+import app.coronawarn.verification.service.FakeDelayService;
+import app.coronawarn.verification.service.FakeRequestService;
 import app.coronawarn.verification.service.TestResultServerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -14,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StopWatch;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,10 +40,14 @@ public class MobileTestAckController {
    */
   public static final String TESTRESULT_ACK = "/testresult/ack";
 
-  public static final Integer RESPONSE_PADDING_LENGTH = 45;
-
   @NonNull
   private final TestResultServerService testResultServerService;
+
+  @NonNull
+  private final FakeDelayService fakeDelayService;
+
+  @NonNull
+  private final FakeRequestService fakeRequestController;
 
   /**
    * Acknowledges the reception of a COVID-19 test result.
@@ -59,15 +66,31 @@ x   * @return result of the test, which can be POSITIVE, NEGATIVE, INVALID, PEND
     consumes = MediaType.APPLICATION_JSON_VALUE,
     produces = MediaType.APPLICATION_JSON_VALUE
   )
-  public DeferredResult<ResponseEntity<?>> ackTestResult(
+  public DeferredResult<ResponseEntity<Void>> ackTestResult(
     @Valid @RequestBody MobileTestPollingRequest mobileTestPollingRequest) {
 
-    testResultServerService.ackTestResult(
-      MobileTestResultRequest.fromMobileTestPollingRequest(mobileTestPollingRequest));
+    MobileTestResultRequest mobileTestResultRequest = MobileTestResultRequest
+      .fromMobileTestPollingRequest(mobileTestPollingRequest);
 
-    DeferredResult<ResponseEntity<?>> deferredResult = new DeferredResult<>();
-    deferredResult.setResult(ResponseEntity.noContent().build());
-    return deferredResult;
+    if (mobileTestResultRequest.isFakeRequest()) {
+
+      return fakeRequestController.getAck();
+
+    } else {
+
+      StopWatch stopWatch = new StopWatch();
+      stopWatch.start();
+
+      ResponseEntity<Void> ackResponse = testResultServerService.ackTestResult(
+        MobileTestResultRequest.fromMobileTestPollingRequest(mobileTestPollingRequest));
+      DeferredResult<ResponseEntity<Void>> deferredResult = new DeferredResult<>();
+      deferredResult.setResult(ackResponse);
+
+      stopWatch.stop();
+      fakeDelayService.updateFakeAckRequestDelay(stopWatch.getTotalTimeMillis());
+      return deferredResult;
+
+    }
 
   }
 

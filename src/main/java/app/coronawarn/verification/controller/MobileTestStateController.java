@@ -4,6 +4,8 @@ package app.coronawarn.verification.controller;
 import app.coronawarn.verification.model.MobileTestPollingRequest;
 import app.coronawarn.verification.model.MobileTestResultRequest;
 import app.coronawarn.verification.model.TestResult;
+import app.coronawarn.verification.service.FakeDelayService;
+import app.coronawarn.verification.service.FakeRequestService;
 import app.coronawarn.verification.service.TestResultServerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -12,10 +14,10 @@ import javax.validation.Valid;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StopWatch;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -39,13 +41,17 @@ public class MobileTestStateController {
    */
   public static final String TESTRESULT_POLL = "/testresult/poll";
 
-  public static final Integer RESPONSE_PADDING_LENGTH = 45;
-
   @NonNull
   private final TestResultServerService testResultServerService;
 
+  @NonNull
+  private final FakeDelayService fakeDelayService;
+
+  @NonNull
+  private final FakeRequestService fakeRequestController;
+
   /**
-   * Returns the test status of the COVID-19 test with cwa-fake header.
+   * Returns the test status of the COVID-19 test.
    *
    * @param mobileTestPollingRequest mobileTestId with datePatientInfectious{@link MobileTestPollingRequest}
 x   * @return result of the test, which can be POSITIVE, NEGATIVE, INVALID, PENDING or FAILED will POSITIVE for TeleTan
@@ -64,17 +70,29 @@ x   * @return result of the test, which can be POSITIVE, NEGATIVE, INVALID, PEND
   public DeferredResult<ResponseEntity<TestResult>> getTestState(
     @Valid @RequestBody MobileTestPollingRequest mobileTestPollingRequest) {
 
-    TestResult testResult = testResultServerService.pollTestResult(
-      MobileTestResultRequest.fromMobileTestPollingRequest(mobileTestPollingRequest));
+    MobileTestResultRequest mobileTestResultRequest = MobileTestResultRequest
+      .fromMobileTestPollingRequest(mobileTestPollingRequest);
 
-    testResult.setResponsePadding(RandomStringUtils.randomAlphanumeric(RESPONSE_PADDING_LENGTH));
+    if (mobileTestResultRequest.isFakeRequest()) {
 
-    log.debug("Result {}",testResult);
-    log.info("The result for registration token based on hashed Guid will be returned.");
+      return fakeRequestController.getTestState();
 
-    DeferredResult<ResponseEntity<TestResult>> deferredResult = new DeferredResult<>();
-    deferredResult.setResult(ResponseEntity.ok(testResult));
-    return deferredResult;
+    } else {
+
+      StopWatch stopWatch = new StopWatch();
+      stopWatch.start();
+      TestResult testResult = testResultServerService.pollTestResult(mobileTestResultRequest);
+      testResult.applyPadding();
+      stopWatch.stop();
+      fakeDelayService.updateFakeTestRequestDelay(stopWatch.getTotalTimeMillis());
+
+      DeferredResult<ResponseEntity<TestResult>> deferredResult = new DeferredResult<>();
+      deferredResult.setResult(ResponseEntity.ok(testResult));
+      return deferredResult;
+
+    }
+
+
 
   }
 
