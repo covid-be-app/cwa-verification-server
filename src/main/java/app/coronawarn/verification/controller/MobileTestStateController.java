@@ -45,7 +45,7 @@ public class MobileTestStateController {
   private final TestResultServerService testResultServerService;
 
   /**
-   * Returns the test status of the COVID-19 test
+   * Returns the test status of the COVID-19 test.
    *
    * @param mobileTestPollingRequest mobileTestId with datePatientInfectious{@link MobileTestPollingRequest}
 x   * @return result of the test, which can be POSITIVE, NEGATIVE, INVALID, PENDING or FAILED will POSITIVE for TeleTan

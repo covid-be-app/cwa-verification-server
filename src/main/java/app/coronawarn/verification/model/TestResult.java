@@ -23,6 +23,7 @@ package app.coronawarn.verification.model;
 
 import static app.coronawarn.verification.model.LabTestResult.PENDING;
 import static app.coronawarn.verification.model.TestResult.ResultChannel.UNKNOWN;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import javax.persistence.Transient;
@@ -77,10 +78,9 @@ public class TestResult {
   }
 
   /**
-   * Create a pending result.
+   * Create a dummy pending result in response to a dummy poll request.
    *
-   * @param mobileTestId The mobile test id.
-   * @return
+   * @return a dummy pending result.
    */
   public static TestResult dummyTestResult() {
     return new TestResult()
