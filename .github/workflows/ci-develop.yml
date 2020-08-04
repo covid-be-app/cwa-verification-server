@@ -3,6 +3,8 @@ on:
   push:
     branches:
     - development
+env:
+  AWS_DEFAULT_REGION: eu-central-1
 jobs:
   build:
     runs-on: ubuntu-latest
