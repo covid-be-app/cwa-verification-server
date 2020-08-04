@@ -2,7 +2,7 @@ name: ci-develop
 on:
   push:
     branches:
-    - develop
+    - development
 jobs:
   build:
     runs-on: ubuntu-latest
