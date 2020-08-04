@@ -45,7 +45,7 @@ public class MobileTestStateController {
   private final TestResultServerService testResultServerService;
 
   /**
-   * Returns the test status of the COVID-19 test with cwa-fake header.
+   * Returns the test status of the COVID-19 test
    *
    * @param mobileTestPollingRequest mobileTestId with datePatientInfectious{@link MobileTestPollingRequest}
 x   * @return result of the test, which can be POSITIVE, NEGATIVE, INVALID, PENDING or FAILED will POSITIVE for TeleTan
@@ -64,8 +64,16 @@ x   * @return result of the test, which can be POSITIVE, NEGATIVE, INVALID, PEND
   public DeferredResult<ResponseEntity<TestResult>> getTestState(
     @Valid @RequestBody MobileTestPollingRequest mobileTestPollingRequest) {
 
-    TestResult testResult = testResultServerService.pollTestResult(
-      MobileTestResultRequest.fromMobileTestPollingRequest(mobileTestPollingRequest));
+    MobileTestResultRequest mobileTestResultRequest = MobileTestResultRequest
+      .fromMobileTestPollingRequest(mobileTestPollingRequest);
+
+    TestResult testResult = null;
+
+    if (mobileTestResultRequest.isFakeRequest()) {
+      testResult = TestResult.dummyTestResult();
+    } else {
+      testResult = testResultServerService.pollTestResult(mobileTestResultRequest);
+    }
 
     testResult.setResponsePadding(RandomStringUtils.randomAlphanumeric(RESPONSE_PADDING_LENGTH));
 

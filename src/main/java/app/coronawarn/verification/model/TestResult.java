@@ -21,6 +21,8 @@
 
 package app.coronawarn.verification.model;
 
+import static app.coronawarn.verification.model.LabTestResult.PENDING;
+import static app.coronawarn.verification.model.TestResult.ResultChannel.UNKNOWN;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import javax.persistence.Transient;
@@ -28,7 +30,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
 
 
 /**
@@ -40,10 +42,11 @@ import lombok.RequiredArgsConstructor;
   description = "The test result model."
 )
 @Data
+@Accessors(chain = true)
 @NoArgsConstructor
 @AllArgsConstructor
-@RequiredArgsConstructor
 public class TestResult {
+
   @NonNull
   private LabTestResult result;
 
@@ -61,6 +64,32 @@ public class TestResult {
     this.result = result;
     this.resultChannel = resultChannel;
     this.responsePadding = responsePadding;
+  }
+
+  /**
+   * Create a test result with a result,channel and padding.
+   *
+   * @param result the result.
+   * @param resultChannel the channel.
+   */
+  public TestResult(LabTestResult result,ResultChannel resultChannel) {
+    this(result,resultChannel,null);
+  }
+
+  /**
+   * Create a pending result.
+   *
+   * @param mobileTestId The mobile test id.
+   * @return
+   */
+  public static TestResult dummyTestResult() {
+    return new TestResult()
+      .setResult(PENDING)
+      .setResultChannel(UNKNOWN)
+      .setDateTestCommunicated(LocalDate.now())
+      .setDatePatientInfectious(LocalDate.now())
+      .setDateSampleCollected(LocalDate.now())
+      .setDateTestPerformed(LocalDate.now());
   }
 
   private LocalDate datePatientInfectious;
