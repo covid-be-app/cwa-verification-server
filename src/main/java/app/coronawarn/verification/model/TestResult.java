@@ -32,6 +32,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
+import org.apache.commons.lang3.RandomStringUtils;
 
 
 /**
@@ -47,6 +48,8 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TestResult {
+
+  public static final Integer RESPONSE_PADDING_LENGTH = 45;
 
   @NonNull
   private LabTestResult result;
@@ -83,13 +86,23 @@ public class TestResult {
    * @return a dummy pending result.
    */
   public static TestResult dummyTestResult() {
-    return new TestResult()
+
+    TestResult testResult = new TestResult()
       .setResult(PENDING)
       .setResultChannel(UNKNOWN)
       .setDateTestCommunicated(LocalDate.now())
       .setDatePatientInfectious(LocalDate.now())
       .setDateSampleCollected(LocalDate.now())
       .setDateTestPerformed(LocalDate.now());
+
+    testResult.applyPadding();
+
+    return testResult;
+
+  }
+
+  public void applyPadding() {
+    setResponsePadding(RandomStringUtils.randomAlphanumeric(RESPONSE_PADDING_LENGTH));
   }
 
   private LocalDate datePatientInfectious;
