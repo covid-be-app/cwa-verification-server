@@ -43,7 +43,7 @@ public class MobileTestAckController {
   private final TestResultServerService testResultServerService;
 
   /**
-   * Returns the test status of the COVID-19 test with cwa-fake header.
+   * Acknowledges the reception of a COVID-19 test result.
    *
    * @param mobileTestPollingRequest mobileTestId with datePatientInfectious{@link MobileTestPollingRequest}
 x   * @return result of the test, which can be POSITIVE, NEGATIVE, INVALID, PENDING or FAILED will POSITIVE for TeleTan
