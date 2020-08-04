@@ -28,6 +28,7 @@ import app.coronawarn.verification.model.TestResult;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 /**
@@ -42,14 +43,23 @@ public class TestResultServerService {
   private final TestResultServerClient testResultServerClient;
 
   /**
-   * //TODO: instead of a hash we not require a MobileTestResultRequest.
+   * This method retrieves a test result.
    *
-   *
-   * @param mobileTestResultRequest hashed GUID
+   * @param mobileTestResultRequest for retrieving a test result.
    * @return Testresult for GUID
    */
-  public TestResult mobileTestResultRequest(MobileTestResultRequest mobileTestResultRequest) {
-    return testResultServerClient.mobileTestResultRequest(mobileTestResultRequest);
+  public TestResult pollTestResult(MobileTestResultRequest mobileTestResultRequest) {
+    return testResultServerClient.pollTestResult(mobileTestResultRequest);
+  }
+
+  /**
+   * This method retrieves a test result.
+   *
+   * @param mobileTestResultRequest for retrieving a test result.
+   * @return Testresult for GUID
+   */
+  public ResponseEntity<Void> ackTestResult(MobileTestResultRequest mobileTestResultRequest) {
+    return testResultServerClient.ackTestResult(mobileTestResultRequest);
   }
 
   /**

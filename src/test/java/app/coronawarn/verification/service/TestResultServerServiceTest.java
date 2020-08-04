@@ -33,6 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.http.ResponseEntity;
 
 public class TestResultServerServiceTest {
 
@@ -67,8 +68,14 @@ public class TestResultServerServiceTest {
   }
 
   public static class TestResultServerClientMock implements TestResultServerClient {
+
     @Override
-    public TestResult mobileTestResultRequest(MobileTestResultRequest mobileTestResultRequest) {
+    public TestResult pollTestResult(MobileTestResultRequest mobileTestResultRequest) {
+      return null;
+    }
+
+    @Override
+    public ResponseEntity<Void> ackTestResult(MobileTestResultRequest mobileTestResultRequest) {
       return null;
     }
 

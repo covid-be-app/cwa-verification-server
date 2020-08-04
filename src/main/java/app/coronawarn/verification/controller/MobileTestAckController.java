@@ -3,7 +3,6 @@ package app.coronawarn.verification.controller;
 
 import app.coronawarn.verification.model.MobileTestPollingRequest;
 import app.coronawarn.verification.model.MobileTestResultRequest;
-import app.coronawarn.verification.model.TestResult;
 import app.coronawarn.verification.service.TestResultServerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -12,7 +11,6 @@ import javax.validation.Valid;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,12 +30,12 @@ import org.springframework.web.context.request.async.DeferredResult;
 @RequestMapping("/version/v1")
 @Validated
 @Profile("external")
-public class MobileTestStateController {
+public class MobileTestAckController {
 
   /**
-   * The route to the test status of the COVID-19 test endpoint.
+   * The route to the test ack of the COVID-19 test endpoint.
    */
-  public static final String TESTRESULT_POLL = "/testresult/poll";
+  public static final String TESTRESULT_ACK = "/testresult/ack";
 
   public static final Integer RESPONSE_PADDING_LENGTH = 45;
 
@@ -45,7 +43,7 @@ public class MobileTestStateController {
   private final TestResultServerService testResultServerService;
 
   /**
-   * Returns the test status of the COVID-19 test with cwa-fake header.
+   * Acknowledges the reception of a COVID-19 test result.
    *
    * @param mobileTestPollingRequest mobileTestId with datePatientInfectious{@link MobileTestPollingRequest}
 x   * @return result of the test, which can be POSITIVE, NEGATIVE, INVALID, PENDING or FAILED will POSITIVE for TeleTan
@@ -57,23 +55,18 @@ x   * @return result of the test, which can be POSITIVE, NEGATIVE, INVALID, PEND
   )
   @ApiResponses(value = {
     @ApiResponse(responseCode = "200", description = "Testresult retrieved")})
-  @PostMapping(value = TESTRESULT_POLL,
+  @PostMapping(value = TESTRESULT_ACK,
     consumes = MediaType.APPLICATION_JSON_VALUE,
     produces = MediaType.APPLICATION_JSON_VALUE
   )
-  public DeferredResult<ResponseEntity<TestResult>> getTestState(
+  public DeferredResult<ResponseEntity<?>> ackTestResult(
     @Valid @RequestBody MobileTestPollingRequest mobileTestPollingRequest) {
 
-    TestResult testResult = testResultServerService.pollTestResult(
+    testResultServerService.ackTestResult(
       MobileTestResultRequest.fromMobileTestPollingRequest(mobileTestPollingRequest));
 
-    testResult.setResponsePadding(RandomStringUtils.randomAlphanumeric(RESPONSE_PADDING_LENGTH));
-
-    log.debug("Result {}",testResult);
-    log.info("The result for registration token based on hashed Guid will be returned.");
-
-    DeferredResult<ResponseEntity<TestResult>> deferredResult = new DeferredResult<>();
-    deferredResult.setResult(ResponseEntity.ok(testResult));
+    DeferredResult<ResponseEntity<?>> deferredResult = new DeferredResult<>();
+    deferredResult.setResult(ResponseEntity.noContent().build());
     return deferredResult;
 
   }
