@@ -36,7 +36,7 @@ jobs:
     - name: docker push ecr
       run: |
         sudo apt-get install --yes awscli
-        aws ecr get-login-password | docker login --username AWS --password-stdin 
+        aws ecr get-login-password | docker login --username AWS --password-stdin ${ECR_REPO_HOST}
         docker push ${ECR_REPO_HOST}/${ECR_REPO_NAME}:develop
         docker push ${ECR_REPO_HOST}/${ECR_REPO_NAME}:latest
       env:
