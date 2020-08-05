@@ -95,3 +95,8 @@ cwa-testresult-server:
     key-store-password: changeit
     trust-store: classpath:truststore.jks
     trust-store-password: changeit
+
+cloud:
+  aws:
+    region:
+      static: eu-central-1
