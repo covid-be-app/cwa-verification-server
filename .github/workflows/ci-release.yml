@@ -11,6 +11,7 @@ on:
 jobs:
   tag-verification-image:
     name: "Tag the verification image on ECR with the version"
+    runs-on: ubuntu-latest
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1

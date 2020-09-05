@@ -12,6 +12,7 @@ jobs:
   tag-verification-image:
     name: "Tag the verification image on ECR with the master commit hash"
     if: github.base_ref == 'master' && github.event.action == 'closed' && github.event.pull_request.merged
+    runs-on: ubuntu-latest
     steps:
       - name: Configure AWS Credentials if this is a PR close
         uses: aws-actions/configure-aws-credentials@v1
