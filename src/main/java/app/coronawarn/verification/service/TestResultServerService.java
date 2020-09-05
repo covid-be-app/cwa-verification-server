@@ -23,10 +23,12 @@ package app.coronawarn.verification.service;
 
 import app.coronawarn.verification.client.TestResultServerClient;
 import app.coronawarn.verification.model.HashedGuid;
+import app.coronawarn.verification.model.MobileTestResultRequest;
 import app.coronawarn.verification.model.TestResult;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 /**
@@ -39,6 +41,26 @@ public class TestResultServerService {
 
   @NonNull
   private final TestResultServerClient testResultServerClient;
+
+  /**
+   * This method retrieves a test result.
+   *
+   * @param mobileTestResultRequest for retrieving a test result.
+   * @return Testresult for GUID
+   */
+  public TestResult pollTestResult(MobileTestResultRequest mobileTestResultRequest) {
+    return testResultServerClient.pollTestResult(mobileTestResultRequest);
+  }
+
+  /**
+   * This method retrieves a test result.
+   *
+   * @param mobileTestResultRequest for retrieving a test result.
+   * @return Testresult for GUID
+   */
+  public ResponseEntity<Void> ackTestResult(MobileTestResultRequest mobileTestResultRequest) {
+    return testResultServerClient.ackTestResult(mobileTestResultRequest);
+  }
 
   /**
    * This method gives an TestResult for a guid.

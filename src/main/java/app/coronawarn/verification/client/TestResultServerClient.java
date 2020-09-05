@@ -22,9 +22,11 @@
 package app.coronawarn.verification.client;
 
 import app.coronawarn.verification.model.HashedGuid;
+import app.coronawarn.verification.model.MobileTestResultRequest;
 import app.coronawarn.verification.model.TestResult;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 
 /**
@@ -37,12 +39,36 @@ import org.springframework.web.bind.annotation.PostMapping;
 public interface TestResultServerClient {
 
   /**
+   * This method retrieves a testResult from the LabServer.
+   *
+   * @param mobileTestResultRequest for TestResult
+   * @return TestResult from server
+   */
+  @PostMapping(value = "/v1/app/testresult/poll",
+    consumes = MediaType.APPLICATION_JSON_VALUE,
+    produces = MediaType.APPLICATION_JSON_VALUE
+  )
+  TestResult pollTestResult(MobileTestResultRequest mobileTestResultRequest);
+
+  /**
+   * This method acknowledges the retrieval of a testResult from the LabServer.
+   *
+   * @param mobileTestResultRequest for TestResult
+   * @return TestResult from server
+   */
+  @PostMapping(value = "/v1/app/testresult/ack",
+    consumes = MediaType.APPLICATION_JSON_VALUE,
+    produces = MediaType.APPLICATION_JSON_VALUE
+  )
+  ResponseEntity<Void> ackTestResult(MobileTestResultRequest mobileTestResultRequest);
+
+  /**
    * This method gets a testResult from the LabServer.
    *
    * @param guid for TestResult
    * @return TestResult from server
    */
-  @PostMapping(value = "/api/v1/app/result",
+  @PostMapping(value = "/v1/app/result",
     consumes = MediaType.APPLICATION_JSON_VALUE,
     produces = MediaType.APPLICATION_JSON_VALUE
   )

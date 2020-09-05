@@ -1,51 +1,50 @@
-name: ci-master
+name: ci-release
 on:
-  pull_request:
+  release:
     branches:
       - master
     types:
-      - closed
+      - published
+    tags:
+      - 'v*'
 
 jobs:
   tag-verification-image:
-    name: "Tag the verification image on ECR with the master commit hash"
-    if: github.base_ref == 'master' && github.event.action == 'closed' && github.event.pull_request.merged
+    name: "Tag the verification image on ECR with the version"
     runs-on: ubuntu-latest
     steps:
-      - name: Configure AWS Credentials if this is a PR close
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_TOOLING_PUSHECR }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_TOOLING_PUSHECR }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-      - name: "Get tag of source image"
-        id: get-src-tag
+      - name: "Get tag value"
+        id: get-tag-value
         run: |
-          echo "::set-output name=srctag::${{ github.event.pull_request.head.sha }}"
-          
+          echo "::set-output name=tag::${{ github.event.release.tag_name }}"
       - name: "Pull image from ECR, tag it and push it"
         run: |
           aws ecr get-login-password | docker login --username AWS --password-stdin ${{ secrets.ECR_REPO_HOST }}
-          docker pull ${{ secrets.ECR_REPO_HOST }}/${{ secrets.ECR_REPO_NAME }}:${{ steps.get-src-tag.outputs.srctag }}
-          docker tag ${{ secrets.ECR_REPO_HOST }}/${{ secrets.ECR_REPO_NAME }}:${{ steps.get-src-tag.outputs.srctag }} ${{ secrets.ECR_REPO_HOST }}/${{ secrets.ECR_REPO_NAME }}:${GITHUB_SHA}
-          docker push ${{ secrets.ECR_REPO_HOST }}/${{ secrets.ECR_REPO_NAME }}:${GITHUB_SHA}
+          docker pull ${{ secrets.ECR_REPO_HOST }}/${{ secrets.ECR_REPO_NAME }}:${GITHUB_SHA}
+          docker tag ${{ secrets.ECR_REPO_HOST }}/${{ secrets.ECR_REPO_NAME }}:${GITHUB_SHA} ${{ secrets.ECR_REPO_HOST }}/${{ secrets.ECR_REPO_NAME }}:${{ steps.get-tag-value.outputs.tag }}
+          docker push ${{ secrets.ECR_REPO_HOST }}/${{ secrets.ECR_REPO_NAME }}:${{ steps.get-tag-value.outputs.tag }}
 
-  deploy-stg-verification:
-    name: "Deploy the external verification service to the stg environment"
+  deploy-prd-verification:
+    name: "Deploy the external verification service to the prd environment"
     runs-on: ubuntu-latest
-    if: github.base_ref == 'master' && github.event.action == 'closed' && github.event.pull_request.merged
     needs:
       - tag-verification-image
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_STG_PUSHECR }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STG_PUSHECR }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PRD_PUSHECR }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PRD_PUSHECR }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-      - name: Retrieve Task Definition for external service on STG
+      - name: Retrieve Task Definition for external service on PRD
         run: |
-          aws ecs describe-task-definition --task-definition ${{ secrets.ECS_TASK_FAMILY_STG }} --query taskDefinition > task-definition.json
+          aws ecs describe-task-definition --task-definition ${{ secrets.ECS_TASK_FAMILY_PRD }} --query taskDefinition > task-definition.json
       - name: Show task definition
         run: |
           cat task-definition.json
@@ -53,43 +52,42 @@ jobs:
         id: set-image-output
         run: |
           echo "::set-output name=image::${{ secrets.ECR_REPO_HOST }}/${{ secrets.ECR_REPO_NAME }}:${GITHUB_SHA}"
-      - name: Update Task Definition for STG with new image
+      - name: Update Task Definition for PRD with new image
         id: render-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: task-definition.json
-          container-name: "${{ secrets.ECS_CONTAINER_NAME_STG }}"
+          container-name: "${{ secrets.ECS_CONTAINER_NAME_PRD }}"
           image: "${{ steps.set-image-output.outputs.image }}"
         env:
           IMAGE: "${{ secrets.ECR_REPO_HOST }}/${{ secrets.ECR_REPO_NAME }}:${GITHUB_SHA}"
       - name: Get service to update
         id: set-service-output
         run: |
-          echo "::set-output name=service::$(aws ecs list-services --cluster ${{ secrets.CLUSTER_NAME_STG }} --output text | grep Verification | grep -v Int | awk -F'/' '{print $2}')"
+          echo "::set-output name=service::$(aws ecs list-services --cluster ${{ secrets.CLUSTER_NAME_PRD }} --output text | grep Verification | grep -v Int | awk -F'/' '{print $2}')"
       - name: Deploy services with new task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.render-task-def.outputs.task-definition }}
           service: ${{ steps.set-service-output.outputs.service }}
-          cluster: ${{ secrets.CLUSTER_NAME_STG }}
+          cluster: ${{ secrets.CLUSTER_NAME_PRD }}
           wait-for-service-stability: false
 
-  deploy-stg-verification-int:
-    name: "Deploy the internal verification service to the stg environment"
+  deploy-prd-verification-int:
+    name: "Deploy the internal verification service to the prd environment"
     runs-on: ubuntu-latest
-    if: github.base_ref == 'master' && github.event.action == 'closed' && github.event.pull_request.merged
     needs:
       - tag-verification-image
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_STG_PUSHECR }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STG_PUSHECR }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PRD_PUSHECR }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PRD_PUSHECR }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-      - name: Retrieve Task Definition for internal service on STG
+      - name: Retrieve Task Definition for internal service on PRD
         run: |
-          aws ecs describe-task-definition --task-definition ${{ secrets.ECS_TASK_FAMILY_STG }}-int --query taskDefinition > task-definition.json
+          aws ecs describe-task-definition --task-definition ${{ secrets.ECS_TASK_FAMILY_PRD }}-int --query taskDefinition > task-definition.json
       - name: Show task definition
         run: |
           cat task-definition.json
@@ -97,23 +95,23 @@ jobs:
         id: set-image-output
         run: |
           echo "::set-output name=image::${{ secrets.ECR_REPO_HOST }}/${{ secrets.ECR_REPO_NAME }}:${GITHUB_SHA}"
-      - name: Update Task Definition for STG with new image
+      - name: Update Task Definition for PRD with new image
         id: render-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: task-definition.json
-          container-name: "${{ secrets.ECS_CONTAINER_NAME_STG }}-int"
+          container-name: "${{ secrets.ECS_CONTAINER_NAME_PRD }}-int"
           image: "${{ steps.set-image-output.outputs.image }}"
         env:
           IMAGE: "${{ secrets.ECR_REPO_HOST }}/${{ secrets.ECR_REPO_NAME }}:${GITHUB_SHA}"
       - name: Get service to update
         id: set-service-output
         run: |
-          echo "::set-output name=service::$(aws ecs list-services --cluster ${{ secrets.CLUSTER_NAME_STG }} --output text | grep VerificationInt | awk -F'/' '{print $2}')"
+          echo "::set-output name=service::$(aws ecs list-services --cluster ${{ secrets.CLUSTER_NAME_PRD }} --output text | grep VerificationInt | awk -F'/' '{print $2}')"
       - name: Deploy services with new task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.render-task-def.outputs.task-definition }}
           service: ${{ steps.set-service-output.outputs.service }}
-          cluster: ${{ secrets.CLUSTER_NAME_STG }}
+          cluster: ${{ secrets.CLUSTER_NAME_PRD }}
           wait-for-service-stability: false
