@@ -2,6 +2,7 @@
  * Corona-Warn-App / cwa-verification
  *
  * (C) 2020, T-Systems International GmbH
+ * All modifications are copyright (c) 2020 Devside SRL.
  *
  * Deutsche Telekom AG and all other contributors /
  * copyright owners license this file to you under the Apache
