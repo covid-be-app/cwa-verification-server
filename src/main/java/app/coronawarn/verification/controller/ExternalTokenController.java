@@ -87,8 +87,7 @@ public class ExternalTokenController {
 
     switch (keyType) {
       case GUID:
-        // TODO: coronalert-app - here a registration token is created on the server based on a GUID.
-        // TODO: coronalert-app - in BE an R1 +t0 is generated on the phone and passed directly.
+        log.info("Returning the successfully generated tan.");
         ResponseEntity<RegistrationToken> responseEntity = appSessionService.generateRegistrationTokenByGuid(key);
         stopWatch.stop();
         fakeDelayService.updateFakeTokenRequestDelay(stopWatch.getTotalTimeMillis());
@@ -101,6 +100,7 @@ public class ExternalTokenController {
           VerificationTan teleTan = optional.get();
           teleTan.setRedeemed(true);
           tanService.saveTan(teleTan);
+          log.info("Returning the successfully generated tan.");
           stopWatch.stop();
           fakeDelayService.updateFakeTokenRequestDelay(stopWatch.getTotalTimeMillis());
           deferredResult.setResult(response);
