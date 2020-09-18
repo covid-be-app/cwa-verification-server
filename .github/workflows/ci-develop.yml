@@ -245,3 +245,4 @@ jobs:
           service: ${{ steps.set-service-output.outputs.service }}
           cluster: ${{ secrets.CLUSTER_NAME_TST }}
           wait-for-service-stability: false
+
