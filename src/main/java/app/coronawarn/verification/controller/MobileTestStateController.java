@@ -4,6 +4,7 @@ package app.coronawarn.verification.controller;
 import app.coronawarn.verification.model.MobileTestPollingRequest;
 import app.coronawarn.verification.model.MobileTestResultRequest;
 import app.coronawarn.verification.model.TestResult;
+import app.coronawarn.verification.monitoring.TestRequestMonitor;
 import app.coronawarn.verification.service.FakeDelayService;
 import app.coronawarn.verification.service.FakeRequestService;
 import app.coronawarn.verification.service.TestResultServerService;
@@ -50,6 +51,9 @@ public class MobileTestStateController {
   @NonNull
   private final FakeRequestService fakeRequestController;
 
+  @NonNull
+  private final TestRequestMonitor testRequestMonitor;
+
   /**
    * Returns the test status of the COVID-19 test.
    *
@@ -75,6 +79,7 @@ x   * @return result of the test, which can be POSITIVE, NEGATIVE, INVALID, PEND
 
     if (mobileTestResultRequest.isFakeRequest()) {
 
+      testRequestMonitor.incrementDummyTestRequest();
       return fakeRequestController.getTestState();
 
     } else {
@@ -82,6 +87,15 @@ x   * @return result of the test, which can be POSITIVE, NEGATIVE, INVALID, PEND
       StopWatch stopWatch = new StopWatch();
       stopWatch.start();
       TestResult testResult = testResultServerService.pollTestResult(mobileTestResultRequest);
+
+      if (testResult.isDummy()) {
+        testRequestMonitor.incrementNonExistingTestRequest();
+      } else if (testResult.isPositive()) {
+        testRequestMonitor.incrementPositiveTestResponse();
+      } else {
+        testRequestMonitor.incrementNegativeTestResponse();
+      }
+
       testResult.applyPadding();
       stopWatch.stop();
       fakeDelayService.updateFakeTestRequestDelay(stopWatch.getTotalTimeMillis());
