@@ -21,6 +21,8 @@
 
 package app.coronawarn.verification.config;
 
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -44,6 +46,7 @@ public class VerificationApplicationConfig {
   private Tan tan = new Tan();
   private AppSession appsession = new AppSession();
   private Entities entities = new Entities();
+  private Monitoring monitoring = new Monitoring();
   private Jwt jwt = new Jwt();
   private Request request = new Request();
 
@@ -118,6 +121,20 @@ public class VerificationApplicationConfig {
     // Maximum number of tans in a session at one time
     int tancountermax = 1;
   }
+
+  /**
+   * Configure the Monitoring with build property values and return the configured parameters.
+   */
+  @Getter
+  @Setter
+  public static class Monitoring {
+
+    @Min(1)
+    @Max(1000)
+    Long batchSize;
+
+  }
+
 
   /**
    * Configure the Entities with build property values and return the configured parameters.

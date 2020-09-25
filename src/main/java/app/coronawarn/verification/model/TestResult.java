@@ -23,8 +23,10 @@
 package app.coronawarn.verification.model;
 
 import static app.coronawarn.verification.model.LabTestResult.PENDING;
+import static app.coronawarn.verification.model.LabTestResult.POSITIVE;
 import static app.coronawarn.verification.model.TestResult.ResultChannel.UNKNOWN;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import javax.persistence.Transient;
@@ -113,6 +115,23 @@ public class TestResult {
   private LocalDate dateTestPerformed;
 
   private LocalDate dateTestCommunicated;
+
+  @JsonIgnore
+  public boolean isPositive() {
+    return POSITIVE.equals(getResult());
+  }
+
+  /**
+   * Mark this as a dummy result.
+   */
+  @JsonIgnore
+  public boolean isDummy() {
+    return PENDING.equals(getResult())
+      && LocalDate.now().equals(getDateTestCommunicated())
+      && LocalDate.now().equals(getDateTestPerformed())
+      && LocalDate.now().equals(getDatePatientInfectious())
+      && LocalDate.now().equals(getDateSampleCollected());
+  }
 
   @Transient
   private String responsePadding;
