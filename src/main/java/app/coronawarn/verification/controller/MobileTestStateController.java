@@ -90,10 +90,6 @@ x   * @return result of the test, which can be POSITIVE, NEGATIVE, INVALID, PEND
 
       if (testResult.isDummy()) {
         testRequestMonitor.incrementNonExistingTestRequest();
-      } else if (testResult.isPositive()) {
-        testRequestMonitor.incrementPositiveTestResponse();
-      } else {
-        testRequestMonitor.incrementNegativeTestResponse();
       }
 
       testResult.applyPadding();
