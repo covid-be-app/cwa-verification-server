@@ -38,8 +38,6 @@ public class TestRequestMonitor {
 
   private BatchCounter nonExistingTestRequests;
   private BatchCounter dummyTestRequests;
-  private BatchCounter positiveResponses;
-  private BatchCounter negativeResponses;
 
   /**
    * Constructor for {@link TestRequestMonitor}. Initializes all counters to 0 upon being called.
@@ -65,8 +63,6 @@ public class TestRequestMonitor {
   private void initializeCounters() {
     nonExistingTestRequests = new BatchCounter(meterRegistry, batchSize, "nonexisting");
     dummyTestRequests = new BatchCounter(meterRegistry, batchSize, "dummy");
-    positiveResponses = new BatchCounter(meterRegistry, batchSize, "positive");
-    negativeResponses = new BatchCounter(meterRegistry, batchSize, "negative");
   }
 
   public void incrementNonExistingTestRequest() {
@@ -76,14 +72,5 @@ public class TestRequestMonitor {
   public void incrementDummyTestRequest() {
     dummyTestRequests.increment();
   }
-
-  public void incrementPositiveTestResponse() {
-    positiveResponses.increment();
-  }
-
-  public void incrementNegativeTestResponse() {
-    negativeResponses.increment();
-  }
-
 
 }
