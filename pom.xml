@@ -38,7 +38,7 @@
     <spring-security.version>5.3.3.RELEASE</spring-security.version>
     <spring.cloud.version>Hoxton.SR4</spring.cloud.version>
     <lombok.version>1.18.12</lombok.version>
-    <liquibase.version>3.10.0</liquibase.version>
+    <liquibase.version>4.8.0</liquibase.version>
     <springdoc.version>1.4.2</springdoc.version>
     <jsonwebtoken.version>0.11.2</jsonwebtoken.version>
     <hibernate-validator.version>6.1.5.Final</hibernate-validator.version>
